@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <title>Tempo Testnet Stablecoin Sender</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+
+  <body>
+  <div class="app">
+    <h1>Tempo Testnet Stablecoin Sender</h1>
+
+    <p id="status">Wallet not connected</p>
+
+    <button id="connectBtn">Connect Wallet</button>
+
+    <div class="card">
+      <input
+        id="toAddress"
+        type="text"
+        placeholder="Recipient address"
+      />
+
+      <input
+        id="amount"
+        type="text"
+        placeholder="Amount (e.g. 1.0)"
+      />
+
+      <button id="sendBtn">Send AlphaUSD</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
+
+
