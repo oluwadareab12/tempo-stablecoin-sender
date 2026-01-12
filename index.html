@@ -1,40 +1,46 @@
 <!DOCTYPE html>
 <html>
   <head>
-  <title>Tempo Testnet Stablecoin Sender</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-
+    <title>Tempo Testnet Stablecoin Sender</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
 
   <body>
-  <div class="app">
-    <h1>Tempo Testnet Stablecoin Sender</h1>
+    <div class="app">
+      <h1>Tempo Testnet Stablecoin Sender</h1>
 
-    <p id="status">Wallet not connected</p>
+      <p id="status">Wallet not connected</p>
 
-    <button id="connectBtn">Connect Wallet</button>
+      <button id="connectBtn">Connect Wallet</button>
 
-    <div class="card">
-      <input
-        id="toAddress"
-        type="text"
-        placeholder="Recipient address"
-      />
+      <label for="tokenSelect">Select Token</label>
+      <select id="tokenSelect" onchange="onTokenChange()">
+        <option value="">-- Choose Token --</option>
+        <option value="ALPHA">AlphaUSDC</option>
+        <option value="BETA">betaUSD</option>
+        <option value="THETA">thetaUSD</option>
+      </select>
 
-      <input
-        id="amount"
-        type="text"
-        placeholder="Amount (e.g. 1.0)"
-      />
+      <div class="card">
+        <textarea
+          id="toAddress"
+          rows="6"
+          placeholder="One address per line"
+        ></textarea>
 
-      <button id="sendBtn">Send AlphaUSD</button>
+        <input
+          id="amount"
+          type="text"
+          placeholder="Amount per address (e.g. 1.0)"
+        />
+
+        <button id="sendBtn">Send Tokens</button>
+      </div>
     </div>
-  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script src="script.js"></script>
-</body>
-
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
 
 

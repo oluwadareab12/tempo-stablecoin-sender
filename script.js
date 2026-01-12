@@ -1,3 +1,10 @@
+console.log("script.js loaded");
+function onTokenChange() {
+  if (!provider || !userAccount) return;
+  refreshBalance();
+}
+const BATCH_CONTRACT_ADDRESS =
+  "0xC7f2Cf4845C6db0e1a1e91ED41Bcd0FcC1b0E141";
 const statusText = document.getElementById("status");
 const connectBtn = document.getElementById("connectBtn");
 const sendBtn = document.getElementById("sendBtn");
@@ -8,14 +15,35 @@ const amountInput = document.getElementById("amount");
 let provider;
 let signer;
 let userAccount;
+const TOKEN_ADDRESSES = {
+  ALPHA: "0x20c0000000000000000000000000000000000001",
+  BETA:  "0x20c0000000000000000000000000000000000002",
+  THETA: "0x20c0000000000000000000000000000000000003"
+};
+function getSelectedTokenAddress() {
+  const tokenKey = document.getElementById("tokenSelect").value;
 
-const TOKEN_ADDRESS = "0x20c0000000000000000000000000000000000001"; // AlphaUSD
+  if (!tokenKey) {
+    alert("Please select a token");
+    return null;
+  }
+
+  return TOKEN_ADDRESSES[tokenKey];
+}
+
+
 
 const TOKEN_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function decimals() view returns (uint8)",
   "function transfer(address to, uint256 amount) returns (bool)",
+  "function approve(address spender, uint256 amount) returns (bool)"
 ];
+
+const BATCH_ABI = [
+  "function sendTokens(address token, address[] recipients, uint256[] amounts) external"
+];
+
 
 connectBtn.onclick = async () => {
   if (!window.ethereum) {
@@ -30,54 +58,72 @@ connectBtn.onclick = async () => {
   userAccount = await signer.getAddress();
 
   statusText.innerText = "Connected: " + userAccount;
-  await refreshBalance();
 
 };
 
 sendBtn.onclick = async () => {
   try {
-    const to = toInput.value;
-    const amount = amountInput.value;
+    const tokenAddress = getSelectedTokenAddress();
+    if (!tokenAddress) return;
 
-    if (!to || !amount) {
-      statusText.innerText = "Fill in address and amount";
+    const recipients = toInput.value
+      .split("\n")
+      .map(a => a.trim())
+      .filter(a => a);
+
+    if (recipients.length === 0 || recipients.length > 10) {
+      statusText.innerText = "Enter 1–10 recipient addresses";
       return;
     }
 
-    sendBtn.disabled = true;
-    statusText.innerText = "Preparing transaction...";
+    const token = new ethers.Contract(tokenAddress, TOKEN_ABI, signer);
+    const decimals = await token.decimals();
 
-    const token = new ethers.Contract(
-      TOKEN_ADDRESS,
-      TOKEN_ABI,
+    const amountPerAddress =
+      ethers.utils.parseUnits(amountInput.value, decimals);
+
+    const amounts = recipients.map(() => amountPerAddress);
+
+    const totalAmount =
+      amountPerAddress.mul(recipients.length);
+
+    // Step 1: Approve once
+    statusText.innerText = "Approving token spend...";
+    const approveTx =
+      await token.approve(BATCH_CONTRACT_ADDRESS, totalAmount);
+    await approveTx.wait();
+
+    // Step 2: Batch send (ONE MetaMask popup)
+    const batch = new ethers.Contract(
+      BATCH_CONTRACT_ADDRESS,
+      BATCH_ABI,
       signer
     );
 
-    const decimals = await token.decimals();
-    const parsedAmount = ethers.utils.parseUnits(amount, decimals);
-
-    statusText.innerText = "Sending transaction...";
-
-    const tx = await token.transfer(to, parsedAmount);
-
-    statusText.innerText = `Transaction sent: ${tx.hash}`;
+    statusText.innerText = "Sending batch transaction...";
+    const tx = await batch.sendTokens(
+      tokenAddress,
+      recipients,
+      amounts
+    );
 
     await tx.wait();
     await refreshBalance();
 
-
-    statusText.innerText = `✅ Transfer confirmed!\nTx: ${tx.hash}`;
-
-    sendBtn.disabled = false;
+    statusText.innerText =
+      "✅ Batch transfer complete (one transaction)";
   } catch (err) {
     console.error(err);
-    statusText.innerText = "❌ Transaction failed";
-    sendBtn.disabled = false;
+    statusText.innerText = "❌ Batch transfer failed";
   }
 };
+
 async function refreshBalance() {
+  const tokenAddress = getSelectedTokenAddress();
+  if (!tokenAddress) return;
+
   const token = new ethers.Contract(
-    TOKEN_ADDRESS,
+    tokenAddress,
     TOKEN_ABI,
     provider
   );
@@ -87,6 +133,8 @@ async function refreshBalance() {
 
   const readable = ethers.utils.formatUnits(balance, decimals);
 
-  statusText.innerText = `Connected: ${userAccount} | Balance: ${readable}`;
+  statusText.innerText =
+    `Connected: ${userAccount} | Balance: ${readable}`;
 }
+
 
